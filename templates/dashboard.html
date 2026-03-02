@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - {{ user.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
+        header { background: #007BFF; color: #fff; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        header a { color: #fff; text-decoration: none; margin-left: 15px; }
+        .container { padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        th { background: #007BFF; color: #fff; }
+        button { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+        .approve { background: #28a745; color: #fff; }
+        .reject { background: #dc3545; color: #fff; }
+        .flash { color: green; text-align: center; margin-bottom: 10px; }
+        form input { padding: 5px; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>Dashboard ({{ user.role|capitalize }}) - {{ user.name }}</div>
+        <div>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </header>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if user.role == 'staff' %}
+        <h3>Apply Leave</h3>
+        <form action="{{ url_for('apply_leave') }}" method="post">
+            <input type="date" name="start_date" required>
+            <input type="date" name="end_date" required>
+            <button type="submit">Apply</button>
+        </form>
+        {% endif %}
+
+        <h3>Leave Requests</h3>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Staff Name</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Status</th>
+                {% if user.role == 'hod' %}<th>Action</th>{% endif %}
+            </tr>
+            {% for leave in leaves %}
+            <tr>
+                <td>{{ leave.id }}</td>
+                <td>{{ leave.staff.name }}</td>
+                <td>{{ leave.start_date }}</td>
+                <td>{{ leave.end_date }}</td>
+                <td>{{ leave.status }}</td>
+                {% if user.role == 'hod' %}
+                <td>
+                    <a href="{{ url_for('approve_leave', leave_id=leave.id) }}"><button class="approve">Approve</button></a>
+                    <a href="{{ url_for('reject_leave', leave_id=leave.id) }}"><button class="reject">Reject</button></a>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h3>Replacements</h3>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Absent Staff</th>
+                <th>Period</th>
+                <th>Replacement Staff</th>
+            </tr>
+            {% for rep in replacements %}
+            <tr>
+                <td>{{ rep.date }}</td>
+                <td>{{ rep.absent_staff.name }}</td>
+                <td>{{ rep.period_number }}</td>
+                <td>{{ rep.replacement_staff.name }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
