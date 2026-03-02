@@ -1,6 +1,46 @@
-<hr>
-<h2>HOD Dashboard (Admin Only)</h2>
-<div id="hodSection">
-    <p>Logged in as: <strong>HOD - CSE Dept</strong></p>
-    <div id="adminLeaveList"></div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Leave & Replacement System | Velammal Madurai</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Staff Leave Management</h1>
+            <p>Velammal College, Madurai - Project by A.ROHIT (TL)</p>
+        </header>
+
+        <section class="form-section">
+            <h2>Apply for Leave</h2>
+            <form id="leaveForm">
+                <input type="text" id="staffName" placeholder="Staff Name" required>
+                <input type="text" id="staffId" placeholder="Staff ID (e.g. 101, 102)" required>
+                <div class="date-group">
+                    <label>Start: </label><input type="date" id="startDate" required>
+                    <label>End: </label><input type="date" id="endDate" required>
+                </div>
+                <button type="submit" class="btn-primary">Submit Request</button>
+            </form>
+        </section>
+
+        <section class="list-section">
+            <h2>My Leave Status</h2>
+            <ul id="leaveList"></ul>
+        </section>
+
+        <section class="hod-section">
+            <h2>HOD Dashboard</h2>
+            <p>Role: <strong>Head of Department</strong></p>
+            <div id="adminLeaveList"></div>
+            <button onclick="exportToCSV()" class="btn-export">Download Leave Report (Excel)</button>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

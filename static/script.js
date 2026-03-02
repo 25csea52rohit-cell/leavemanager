@@ -1,48 +1,108 @@
-// Function for HOD to approve a leave
-function updateStatus(index, newStatus) {
-    let history = JSON.parse(localStorage.getItem('leaveHistory') || "[]");
+// 1. DATABASE SIMULATION
+let staffDatabase = [
+    { id: "101", name: "Dr. Arun", onLeave: false },
+    { id: "102", name: "Prof. Banu", onLeave: false },
+    { id: "103", name: "Mr. Chandran", onLeave: false },
+    { id: "104", name: "Ms. Devi", onLeave: false }
+];
 
-    // Update the status
-    history[index].status = newStatus;
+const form = document.getElementById('leaveForm');
 
-    // If approved, we confirm the replacement
-    if (newStatus === 'Approved') {
-        alert("Notification sent to " + history[index].name + " and replacement " + history[index].replacement);
+// 2. APPLY LEAVE LOGIC
+form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const staffId = document.getElementById('staffId').value;
+    const staffName = document.getElementById('staffName').value;
+    const applicant = staffDatabase.find(s => s.id === staffId);
+
+    if (!applicant) {
+        alert("Staff ID not found in system!");
+        return;
     }
 
+    // SMART REPLACEMENT: Find first person who is NOT the applicant and NOT on leave
+    const available = staffDatabase.filter(s => s.id !== staffId && s.onLeave === false);
+    let replacement = available.length > 0 ? available[0].name : "NO STAFF AVAILABLE";
+
+    const leaveEntry = {
+        name: staffName,
+        id: staffId,
+        start: document.getElementById('startDate').value,
+        end: document.getElementById('endDate').value,
+        replacement: replacement,
+        status: "Pending",
+        timestamp: new Date().toLocaleString()
+    };
+
+    // Mark as on leave to prevent them being picked as a replacement for the next person
+    applicant.onLeave = true;
+
+    let history = JSON.parse(localStorage.getItem('leaveHistory') || "[]");
+    history.push(leaveEntry);
     localStorage.setItem('leaveHistory', JSON.stringify(history));
-    renderLeaves(); // Refresh the view
+
+    renderAll();
+    form.reset();
+});
+
+// 3. HOD APPROVAL LOGIC
+function updateStatus(index, newStatus) {
+    let history = JSON.parse(localStorage.getItem('leaveHistory') || "[]");
+    history[index].status = newStatus;
+    localStorage.setItem('leaveHistory', JSON.stringify(history));
+    renderAll();
 }
 
-function renderLeaves() {
-    leaveList.innerHTML = '';
+// 4. EXPORT TO EXCEL LOGIC
+function exportToCSV() {
+    let history = JSON.parse(localStorage.getItem('leaveHistory') || "[]");
+    if (history.length === 0) return alert("No records!");
+
+    let csv = "Staff Name,ID,Start Date,End Date,Replacement,Status\n";
+    history.forEach(r => {
+        csv += `${r.name},${r.id},${r.start},${r.end},${r.replacement},${r.status}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'Leave_Report.csv');
+    a.click();
+}
+
+// 5. RENDER UI
+function renderAll() {
+    const leaveList = document.getElementById('leaveList');
     const adminList = document.getElementById('adminLeaveList');
-    adminList.innerHTML = ''; // Clear admin list too
+    leaveList.innerHTML = '';
+    adminList.innerHTML = '';
 
     let history = JSON.parse(localStorage.getItem('leaveHistory') || "[]");
 
     history.forEach((entry, index) => {
-        // User View (Standard List)
-        const item = document.createElement('li');
-        item.innerHTML = `
-            <strong>${entry.name}</strong> - Status: <b>${entry.status}</b>
-            <br>Replacement: ${entry.replacement}
-        `;
-        leaveList.appendChild(item);
+        // Staff View
+        const li = document.createElement('li');
+        li.className = `status-${entry.status}`;
+        li.innerHTML = `<strong>${entry.name}</strong> - ${entry.status}<br>
+                        Replacement: ${entry.replacement} (${entry.start})`;
+        leaveList.appendChild(li);
 
-        // HOD View (With Buttons)
-        if (entry.status === 'Pending') {
-            const adminItem = document.createElement('div');
-            adminItem.style.border = "1px solid #ccc";
-            adminItem.style.padding = "10px";
-            adminItem.style.marginBottom = "5px";
-            adminItem.innerHTML = `
-                <p>${entry.name} (ID: ${entry.id}) wants leave from ${entry.start} to ${entry.end}</p>
-                <p>Auto-Replacement: ${entry.replacement}</p>
-                <button onclick="updateStatus(${index}, 'Approved')" style="background:green; color:white;">Approve</button>
-                <button onclick="updateStatus(${index}, 'Rejected')" style="background:red; color:white;">Reject</button>
-            `;
-            adminList.appendChild(adminItem);
+        // HOD View
+        if (entry.status === "Pending") {
+            const div = document.createElement('div');
+            div.className = "admin-card";
+            div.innerHTML = `
+                <p><strong>${entry.name}</strong> wants leave</p>
+                <p>Assigning: ${entry.replacement}</p>
+                <div class="admin-btns">
+                    <button onclick="updateStatus(${index}, 'Approved')" style="background:green; color:white;">Approve</button>
+                    <button onclick="updateStatus(${index}, 'Rejected')" style="background:red; color:white;">Reject</button>
+                </div>`;
+            adminList.appendChild(div);
         }
     });
 }
+
+renderAll();
